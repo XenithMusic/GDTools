@@ -1,4 +1,4 @@
-import time,youtube_dl,os,logging,shutil,newgroundsdl,urllib,requests
+import time,youtube_dl,os,logging,shutil,newgroundsdl,urllib
 from tkinter import messagebox,filedialog,simpledialog
 
 log = logging.getLogger(__name__)
@@ -14,32 +14,28 @@ except Exception as e:
 def cmd_revertsong():
     attempt = 1
     retryable = True
+    success = False
     try:
         os.mkdir("./temp/songrevr/")
     except:
         log.warning("Last cleanup never completed. Cleaning up now.")
         shutil.rmtree("./temp/songrevr/")
         os.mkdir("./temp/songrevr/")
-    while attempt <= 3 and retryable == True:
+    while attempt <= 3 and retryable == True and success == False:
         print("Waiting to prevent ratelimiting.")
         time.sleep(5)
         try:
             try:
                 print("Setting up downloader...")
-                id = 310672
-                audio = newgroundsdl.getSongFileURI("https://www.newgrounds.com/audio/listen/" + str(id))
+                id = 310673
+                fileuri = "https://www.newgrounds.com/audio/listen/" + str(id)
+                audio = newgroundsdl.getSongFileURI(fileuri)
                 print("Beginning stream...")
-                streamset = False
-                audio = requests.get(audio,stream=streamset) # Streaming is temporarily disabled.
+                print("[newgroundsdl-inspired] Downloading...")
                 try:
-                    with open("./temp/songrevr/" + str(id) + ".mp3","wb") as songfile:
-                        if streamset == False:
-                            songfile.write(audio.content)
-                            print("Chunk recieved.")
-                        else:
-                            for data in audio:
-                                songfile.write(data)
-                                print("Chunk recieved.")
+                    dlreq = urllib.request.Request(fileuri, data=None, headers=newgroundsdl.headers)
+                    with urllib.request.urlopen(dlreq) as dlfile, open("./temp/songrevr/" + str(id) + ".mp3","wb") as dlout:
+                        shutil.copyfileobj(dlfile, dlout, length=1024*1024)
                 except MemoryError as e:
                     messagebox.showerror("Reinstating song","Out of memory during stream!")
                     del stream,audio,id
@@ -51,13 +47,19 @@ def cmd_revertsong():
                     internal_replace(id,mode="revert")
                 except Exception as e:
                     messagebox.showerror("Reinstating song","Internal error.\nError:" + str(e))
+                success = True
             except urllib.error.URLError as e:
+                messagebox.showerror("Reinstating song","Unknown error",str(e))
                 retryable = True
                 attempt += 1
-            except IndexError as e:
-                retryable = False
         except Exception as e:
             messagebox.showerror("Reinstating song","Internal error\n" + str(e))
+        
+        try:
+            shutil.rmtree("./temp/songrevr")
+            messagebox.showinfo("Reinstated song","Successfully reinstated song without problems.")
+        except Exception as e:
+            messagebox.showwarning("Reinstating song","Successfully reinstated song, but cleanup failed.\nError: " + str(e))
 def cmd_replacesong():
     url = simpledialog.askstring("Song Replacer","Please type the URL of the song.")
     if url.startswith("https://youtube.com/watch?v=") or url.startswith("https://www.youtube.com/watch?v="):
