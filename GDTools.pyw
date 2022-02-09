@@ -1,4 +1,7 @@
-import tkinter,time,shutil,os,logging,subprocess
+from concurrent.futures import thread
+from email import message
+from lib2to3.pgen2.token import LSQB
+import tkinter,time,shutil,os,logging,subprocess,queue,threading
 from tkinter import messagebox,filedialog
 from zipfile import ZipFile
 from win32com.client import Dispatch as disp
@@ -51,12 +54,18 @@ if dcfg_allow == True:
 
 log = logging.getLogger(__name__)
 
+def loop(func,win,appdata):
+    func(appdata,control=lbx_status)
+    lab_backing.grid_forget()
+    btn_newback.grid(column=0,row=0,padx=20,pady=20)
+
 def saveback():
     btn_newback.grid_forget()
     lab_backing.grid(column=0,row=0,padx=20,pady=20)
-    cmd_newback()
-    lab_backing.grid_forget()
-    btn_newback.grid(column=0,row=0,padx=20,pady=20)
+    messagebox.showinfo("Backup","Select your AppData Geometry Dash Folder")
+    appdata = filedialog.askdirectory(mustexist=True,title="Backup",initialdir="C:/")
+    #threading.Thread(target=loop,args=(cmd_newback,win,appdata))
+    loop()
 
 def loadback():
     btn_loadback.grid_forget()
@@ -82,8 +91,10 @@ def revrsong():
 win = tkinter.Tk()
 win.title("GDTools")
 win.iconphoto(True,tkinter.PhotoImage(file='./assets/icon/16.png'))
-win.columnconfigure(8, minsize=600, weight=1)
-win.rowconfigure(8, minsize=400, weight=1)
+win.columnconfigure(2, minsize=600, weight=1)
+win.rowconfigure(2, minsize=400, weight=1)
+lbx_status  = tkinter.Listbox()
+lbx_statusIX = 0
 lab_backing = tkinter.Label(text="Creating backup...",font=("Hevletica","9"))
 lab_loading = tkinter.Label(text="Loading backup...",font=("Hevletica","9"))
 lab_repsong = tkinter.Label(text="Replacing song...",font=("Hevletica","9"))
@@ -92,6 +103,8 @@ btn_newback = tkinter.Button(text="Create backup",command=saveback)
 btn_loadback = tkinter.Button(text="Load backup",command=loadback)
 btn_repsong = tkinter.Button(text="Replace song",command=replsong)
 btn_revsong = tkinter.Button(text="Reinstate song",command=revrsong)
+lbx_status.grid(column=2,row=0,padx=20,pady=20,columnspan=8,rowspan=6,sticky="nsew")
+
 btn_newback.grid(column=0,row=0,padx=20,pady=20)
 btn_loadback.grid(column=0,row=1)
 btn_repsong.grid(column=1,row=0,padx=20,pady=20)

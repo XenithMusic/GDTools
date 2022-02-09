@@ -79,23 +79,22 @@ def cmd_loadback(location,*,silent=False):
 
 
 
-def cmd_newback(location=None,*,silent=False):
+def cmd_newback(location=None,*,control,silent=False):
     print("Creating backup...")
-    if location == None:
-        messagebox.showinfo("Backup","Select your AppData Geometry Dash Folder")
-        appdata = filedialog.askdirectory(mustexist=True,title="Backup",initialdir="C:/")
-    else:
-        appdata = location
+    control.insert(0,"Info: Creating backup...")
     if appdata == "":
         if silent == False: messagebox.showerror("Backup failed!","Backup failed while asking for AppData folder.")
     else:
         try:
             print("Copying important files...")
+            control.insert(0,"Info: Copying important files...")
             try:
                 os.mkdir("./temp/appdata")
             except:
                 log.warning("Last directory cleanup never completed, skipping dir creation.")
+                control.insert(0,"Warn: Last directory cleanup never completed, skipping dir creation.")
             print("Directory for temporary files created.")
+            control.insert(0,"Info: Directory for temporary files created.")
             try:
                 levels1tar  = "./temp/appdata/CCLocalLevels.dat"
                 levels2tar  = "./temp/appdata/CCLocalLevels2.dat"
@@ -103,29 +102,37 @@ def cmd_newback(location=None,*,silent=False):
                 gameman2tar = "./temp/appdata/CCGameManager2.dat"
                 with open(levels1tar,"x"):
                     print("Created CCLocalLevels")
+                    control.insert(0,"Info: Created CCLocalLevels")
                 with open(levels2tar,"x"):
                     print("Created CCLocalLevels2")
+                    control.insert(0,"Info: Created CCLocalLevels2")
                 with open(gameman1tar,"x"):
                     print("Created CCGameManager")
+                    control.insert(0,"Info: Created CCGameManager")
                 with open(gameman2tar,"x"):
                     print("Created CCGameManager2")
+                    control.insert(0,"Info: Created CCGameManager2")
             except:
                 log.warning("Last file cleanup never completed, skipping file creation.")
+                control.insert(0,"Warn: Last file cleanup never completed, skipping file creation.")
             shutil.copy(appdata + "/CCLocalLevels.dat",levels1tar)
             shutil.copy(appdata + "/CCLocalLevels2.dat",levels2tar)
             shutil.copy(appdata + "/CCGameManager.dat",gameman1tar)
             shutil.copy(appdata + "/CCGameManager2.dat",gameman2tar)
             try:
-                print("Compressing appdata and steamapps into .zip")
+                print("Compressing important files into .zip")
+                control.insert(0,"Info: Compressing important files into .zip")
                 with ZipFile("./backups/" + str(round(time.time())) + ".zip","w",compression=zipfile.ZIP_BZIP2) as zipObj:
                     for f in os.listdir("./temp/appdata"):
                         print("Writing",f,"to zip.")
+                        control.insert(0,"Info: Writing " + f + " to zip.")
                         zipObj.write("./temp/appdata/" + f)
                 try:
                     zipObj.close()
                 except:
                     pass
                 print("Updating analytics.cfg...")
+                control.insert(0,"Info: Updating analytics.cfg...")
                 analytics = open("./analytics.cfg","w")
                 analytics.write(  "# Note: These analytics are not sent to anyone, and are completely private.")
                 analytics.write("\n#       Looking through the code can verify this.")
@@ -133,13 +140,18 @@ def cmd_newback(location=None,*,silent=False):
                 analytics.write("\nlastbackuptime = " + str(time.time()))
                 analytics.write("\nappdatapath = \"" + str(appdata) + "\"")
                 print("Cleaning up...")
+                control.insert(0,"Info: Cleaning up...")
                 try:
                     shutil.rmtree("./temp/appdata")
                     print("Backup complete!")
+                    control.insert(0,"[SUCCESS]")
                     if silent == False: messagebox.showinfo("Backup successful!","Backup has been completed successfully!")
                 except Exception as e:
                     if silent == False: messagebox.showwarning("Backup cleanup failed!","Cleanup failed;\n" + str(e))
+                    control.insert(0,str(e))
             except Exception as e:
                 if silent == False: messagebox.showerror("Backup failed!","Backup failed with exit code -2 (Compression);\n" + str(e))
+                control.insert(0,str(e))
         except Exception as e:
             if silent == False: messagebox.showerror("Backup failed!","Backup failed with exit code -1 (General);\n" + str(e))
+            control.insert(0,str(e))
